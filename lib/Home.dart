@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'about_us.dart';
-// import 'therapist_page.dart';
+import 'therapist_page.dart';
 // import 'therapy_page.dart';
 // import 'consultation_page.dart';
 // import 'location_page.dart';
@@ -10,11 +10,7 @@ import 'about_us.dart';
 class HomePage extends StatelessWidget {
   final List<_NavItem> navItems = [
     _NavItem(title: 'About Us', icon: Icons.info, page: AboutPage()),
-    _NavItem(
-      title: 'Therapist',
-      icon: Icons.person,
-      page: PlaceholderPage(title: 'Therapist'),
-    ),
+    _NavItem(title: 'Therapist', icon: Icons.person, page: TherapistPage()),
     _NavItem(
       title: 'Therapy Areas',
       icon: Icons.local_florist,
