@@ -5,7 +5,7 @@ import 'about_us.dart';
 import 'therapist_page.dart';
 import 'therapy_area.dart';
 // import 'consultation_page.dart';
-// import 'location_page.dart';
+import 'location.dart';
 
 class HomePage extends StatelessWidget {
   final List<_NavItem> navItems = [
@@ -21,11 +21,7 @@ class HomePage extends StatelessWidget {
       icon: Icons.chat,
       page: PlaceholderPage(title: 'Consultation'),
     ),
-    _NavItem(
-      title: 'Location',
-      icon: Icons.location_on,
-      page: PlaceholderPage(title: 'Location'),
-    ),
+    _NavItem(title: 'Location', icon: Icons.location_on, page: LocationPage()),
   ];
 
   @override
