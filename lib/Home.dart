@@ -1,7 +1,7 @@
 // main_page.dart (HomePage)
 
 import 'package:flutter/material.dart';
-// import 'about_page.dart';
+import 'about_us.dart';
 // import 'therapist_page.dart';
 // import 'therapy_page.dart';
 // import 'consultation_page.dart';
@@ -9,13 +9,7 @@ import 'package:flutter/material.dart';
 
 class HomePage extends StatelessWidget {
   final List<_NavItem> navItems = [
-    _NavItem(
-      title: 'About Us',
-      icon: Icons.info,
-      page: PlaceholderPage(
-        title: 'About Us',
-      ), // 실제 페이지 대신 placeholder 사용, AboutPage()연결
-    ),
+    _NavItem(title: 'About Us', icon: Icons.info, page: AboutPage()),
     _NavItem(
       title: 'Therapist',
       icon: Icons.person,

@@ -1,7 +1,7 @@
 // app.dart
 import 'package:flutter/material.dart';
 import 'Home.dart'; // HomePage
-// import 'about_us.dart'; // AboutPage
+import 'about_us.dart'; // AboutPage
 // import 'therapist_page.dart'; // TherapistPage
 // import 'therapy_page.dart'; // TherapyPage
 // import 'consultation_page.dart'; // ConsultationPage
@@ -22,7 +22,7 @@ class MindRestApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => HomePage(),
-        // '/about': (context) => AboutPage(),
+        '/about': (context) => AboutPage(),
         // '/therapist': (context) => TherapistPage(),
         // '/therapy': (context) => TherapyPage(),
         // '/consultation': (context) => ConsultationPage(),
