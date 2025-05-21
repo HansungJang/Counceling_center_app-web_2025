@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'about_us.dart';
 import 'therapist_page.dart';
 import 'therapy_area.dart';
-// import 'consultation_page.dart';
+import 'consultation_page.dart';
 import 'location.dart';
 
 class HomePage extends StatelessWidget {
@@ -16,11 +16,7 @@ class HomePage extends StatelessWidget {
       icon: Icons.local_florist,
       page: TherapyPage(),
     ),
-    _NavItem(
-      title: 'Consultation',
-      icon: Icons.chat,
-      page: PlaceholderPage(title: 'Consultation'),
-    ),
+    _NavItem(title: 'Consultation', icon: Icons.chat, page: ConsultationPage()),
     _NavItem(title: 'Location', icon: Icons.location_on, page: LocationPage()),
   ];
 

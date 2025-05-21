@@ -4,7 +4,7 @@ import 'Home.dart'; // HomePage
 import 'about_us.dart'; // AboutPage
 import 'therapist_page.dart'; // TherapistPage
 import 'therapy_area.dart'; // TherapyPage
-// import 'consultation_page.dart'; // ConsultationPage
+import 'consultation_page.dart'; // ConsultationPage
 import 'location.dart'; // LocationPage
 
 class MindRestApp extends StatelessWidget {
@@ -25,7 +25,7 @@ class MindRestApp extends StatelessWidget {
         '/about': (context) => AboutPage(),
         '/therapist': (context) => TherapistPage(),
         '/therapyarea': (context) => TherapyPage(),
-        // '/consultation': (context) => ConsultationPage(),
+        '/consultation': (context) => ConsultationPage(),
         '/location': (context) => LocationPage(),
       },
     );
