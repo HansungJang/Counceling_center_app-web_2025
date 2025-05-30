@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "749360667967",
+    "project_id": "counceling-project2025",
+    "storage_bucket": "counceling-project2025.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:749360667967:android:ad40d054cf1e8f7245478a",
+        "android_client_info": {
+          "package_name": "com.example.term_project_2"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "749360667967-urql6jfrn4hv5fr1ufh0knghjckksc74.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA6BuOj0Snlg--7NEU2a8doFXqaoyjkiy8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "749360667967-urql6jfrn4hv5fr1ufh0knghjckksc74.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "749360667967-fsm8ihsuntoab6u1lrr47dkqonqo8udt.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.termProject2"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

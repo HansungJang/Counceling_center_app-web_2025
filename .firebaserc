@@ -1,0 +1,8 @@
+{
+  "projects": {
+    "default": "counceling-project2025",
+    "staging": "counceling-project2025"
+  },
+  "targets": {},
+  "etags": {}
+}
