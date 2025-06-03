@@ -20,6 +20,7 @@ class ApplicationState extends ChangeNotifier {
     _auth.authStateChanges().listen(_onAuthStateChanged);
   }
 
+// #1. [login methods]
 
   Future<void> signInWithGoogle() async {
     final googleSignIn = GoogleSignIn();
@@ -167,4 +168,66 @@ class ApplicationState extends ChangeNotifier {
       print("사용자 삭제 실패: $e");
     }
   }
+
+
+  // #2. [about_us methods]
+
+  // About Us 카드 가져오기 (Stream)
+  Stream<QuerySnapshot<Map<String, dynamic>>> getAboutCards() {
+    return _firestore
+        .collection('about_us')
+        .orderBy('order', descending: false) // 'order' 필드로 정렬
+        .snapshots();
+  }
+
+  // About Us 카드 추가
+  Future<void> addAboutCard(String title, String content, int order) async {
+    if (_user == null) return; // 로그인한 사용자만 추가 가능하도록 (필요시)
+    try {
+      await _firestore.collection('about_us').add({
+        'title': title,
+        'content': content,
+        'order': order,
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+        // 'createdBy': _user!.uid, // 필요시 작성자 정보 추가
+      });
+      print("About Us 카드 추가 성공");
+    } catch (e) {
+      print("About Us 카드 추가 실패: $e");
+      throw e; // 오류를 다시 던져 UI에서 처리할 수 있도록 함
+    }
+  }
+
+  // About Us 카드 수정
+  Future<void> updateAboutCard(String cardId, String title, String content, int order) async {
+    if (_user == null) return; // 로그인한 사용자만 수정 가능하도록 (필요시)
+    try {
+      await _firestore.collection('about_us').doc(cardId).update({
+        'title': title,
+        'content': content,
+        'order': order,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      print("About Us 카드 수정 성공");
+    } catch (e) {
+      print("About Us 카드 수정 실패: $e");
+      throw e;
+    }
+  }
+
+  // About Us 카드 삭제
+  Future<void> deleteAboutCard(String cardId) async {
+    if (_user == null) return; // 로그인한 사용자만 삭제 가능하도록 (필요시)
+    try {
+      await _firestore.collection('about_us').doc(cardId).delete();
+      print("About Us 카드 삭제 성공");
+    } catch (e) {
+      print("About Us 카드 삭제 실패: $e");
+      throw e;
+    }
+  }
+  
+
+
 }
