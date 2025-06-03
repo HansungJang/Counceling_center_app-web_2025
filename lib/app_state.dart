@@ -13,11 +13,15 @@ import 'package:google_sign_in/google_sign_in.dart';
 class ApplicationState extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final String _therapistProfileDocId = 'main_therapist'; // Therapist profile document ID
+  String get therapistProfileDocId => _therapistProfileDocId; // getter 추가, therapist_page.dart에서 edit button에 활용
+  
   User? _user;
   User? get user => _user;
 
   ApplicationState() {
     _auth.authStateChanges().listen(_onAuthStateChanged);
+    ensureTherapistProfileExists();
   }
 
 // #1. [login methods]
@@ -228,6 +232,64 @@ class ApplicationState extends ChangeNotifier {
     }
   }
   
+  // #3. [therapist profile methods]
+  // Therapist 프로필 가져오기 (단일 문서 Stream)
+  Stream<DocumentSnapshot<Map<String, dynamic>>> getTherapistProfile() {
+    return _firestore
+        .collection('therapist_profile')
+        .doc(_therapistProfileDocId)
+        .snapshots();
+  }
+
+  // Therapist 프로필 생성 또는 업데이트
+  Future<void> updateTherapistProfile({
+    required String name,
+    required String titleCredentials,
+    required String affiliation,
+    required String specialties, // 기존 specialties 필드명 유지
+    required String message,
+    String? imageUrl, // 선택 사항
+  }) async {
+    if (_user == null) return; // 로그인한 사용자만 (필요시 관리자만)
+    try {
+      await _firestore
+          .collection('therapist_profile')
+          .doc(_therapistProfileDocId)
+          .set( // set 메서드를 사용하여 문서가 없으면 생성, 있으면 덮어쓰기 (또는 update)
+        {
+          'name': name,
+          'titleCredentials': titleCredentials,
+          'affiliation': affiliation,
+          'specialties': specialties, // Firestore 필드명 일치
+          'message': message,
+          if (imageUrl != null) 'imageUrl': imageUrl,
+          'updatedAt': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true), // merge:true 로 기존 필드 유지하며 업데이트
+      );
+      print("Therapist 프로필 업데이트 성공");
+    } catch (e) {
+      print("Therapist 프로필 업데이트 실패: $e");
+      throw e;
+    }
+  }
+
+  // 초기 Therapist 프로필 데이터 생성 (앱 초기 설정 시 또는 필요에 따라 호출)
+  Future<void> ensureTherapistProfileExists() async {
+    final docRef = _firestore.collection('therapist_profile').doc(_therapistProfileDocId);
+    final snapshot = await docRef.get();
+    if (!snapshot.exists) {
+      await updateTherapistProfile(
+        name: '김OO (상담심리 석사)',
+        titleCredentials: 'MA Counseling Psychology',
+        affiliation: '힐링트리 센터 소속\n한국상담심리학회 인증 상담심리사 2급',
+        specialties: '불안, 트라우마, 여성 건강 전문',
+        message: '치유를 향한 작은 발걸음도 용기있는 시작입니다. 당신의 속도에 맞춰 함께 길을 찾아가겠습니다.',
+        // imageUrl: '기본 이미지 URL 또는 null'
+      );
+      print('초기 Therapist 프로필이 생성되었습니다.');
+    }
+  }
 
 
 }
