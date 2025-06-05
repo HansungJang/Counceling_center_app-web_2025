@@ -22,6 +22,7 @@ class ApplicationState extends ChangeNotifier {
   ApplicationState() {
     _auth.authStateChanges().listen(_onAuthStateChanged);
     ensureTherapistProfileExists();
+    ensureSampleTherapyAreasExist();
   }
 
 // #1. [login methods]
@@ -290,6 +291,69 @@ class ApplicationState extends ChangeNotifier {
       print('초기 Therapist 프로필이 생성되었습니다.');
     }
   }
+
+  // #4. [therapy_area methods]
+  // Therapy Areas 가져오기 (Stream)
+  Stream<QuerySnapshot<Map<String, dynamic>>> getTherapyAreas() {
+    return _firestore
+        .collection('therapy_areas')
+        .orderBy('order', descending: false) // 'order' 필드로 정렬
+        .snapshots();
+  }
+
+  // 관리자를 위한 Therapy Area 추가/수정/삭제 메소드 (about_us.dart 와 유사하게 구현 가능)
+  // 예시: addTherapyArea, updateTherapyArea, deleteTherapyArea
+  // 이 부분은 현재 요청의 핵심이 아니므로, 필요시 about_us.dart를 참고하여 추가해주세요.
+
+  // 임시 상담 분야 데이터
+  final List<Map<String, dynamic>> _sampleTherapyAreasData = [
+    {
+      'title': "아동 상담 (샘플)",
+      'description': "정서적 지원, 발달 문제 등 (샘플 데이터)",
+      'iconName': "child_care",
+      'order': 1,
+    },
+    {
+      'title': "청소년 상담 (샘플)",
+      'description': "학업 스트레스, 진로 고민 등 (샘플 데이터)",
+      'iconName': "school",
+      'order': 2,
+    },
+    {
+      'title': "성인 상담 (샘플)",
+      'description': "직장 스트레스, 대인 관계 등 (샘플 데이터)",
+      'iconName': "people",
+      'order': 3,
+    },
+  ];
+
+  // therapy_areas 컬렉션에 샘플 데이터가 없으면 추가하는 로직
+  Future<void> ensureSampleTherapyAreasExist() async {
+    final collectionRef = _firestore.collection('therapy_areas');
+    final snapshot = await collectionRef.limit(1).get(); // 데이터가 있는지 확인하기 위해 1개만 가져옴
+
+    if (snapshot.docs.isEmpty) {
+      // 데이터가 없으면 샘플 데이터 추가
+      print('therapy_areas 컬렉션에 데이터가 없어 샘플 데이터를 추가합니다.');
+      for (final areaData in _sampleTherapyAreasData) {
+        try {
+          // title을 기준으로 이미 존재하는지 한 번 더 체크 (선택 사항, 중복 방지 강화)
+          final existingDoc = await collectionRef.where('title', isEqualTo: areaData['title']).limit(1).get();
+          if (existingDoc.docs.isEmpty) {
+            await collectionRef.add({
+              ...areaData, // 샘플 데이터 복사
+              'createdAt': FieldValue.serverTimestamp(), // 생성 시간 추가 (선택 사항)
+            });
+          }
+        } catch (e) {
+          print('샘플 상담 분야 추가 중 오류 발생: $e');
+        }
+      }
+      print('샘플 상담 분야 데이터 추가 완료.');
+    }
+  }
+
+
 
 
 }
