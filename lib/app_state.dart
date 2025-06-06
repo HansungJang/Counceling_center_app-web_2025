@@ -353,7 +353,37 @@ class ApplicationState extends ChangeNotifier {
     }
   }
 
+  // #5. [consultation_page methods] 상담신청 내용 제출 
+  Future<void> submitConsultation({
+    required List<String> questions,
+    required List<String> answers,
+  }) async {
+    // 로그인한 사용자만 제출 가능하도록 확인
+    if (_user == null) {
+      throw Exception('로그인이 필요합니다.');
+    }
 
+    // 질문과 답변을 Map 형태로 조합
+    final Map<String, String> qaPair = {};
+    for (int i = 0; i < questions.length; i++) {
+      qaPair['question_${i + 1}'] = questions[i];
+      qaPair['answer_${i + 1}'] = answers[i].isNotEmpty ? answers[i] : '답변 없음';
+    }
+
+    try {
+      await _firestore.collection('consultations').add({
+        'userId': _user!.uid, // 신청한 사용자 ID
+        'userEmail': _user!.email ?? '이메일 정보 없음', // 사용자 이메일 (연락용)
+        'consultationData': qaPair, // 질문-답변 쌍
+        'submittedAt': FieldValue.serverTimestamp(), // 제출 시간
+        'status': 'new', // 초기 상태: 'new', 'contacted', 'completed' 등
+      });
+      print('상담 신청 내용이 성공적으로 Firestore에 저장되었습니다.');
+    } catch (e) {
+      print('Firestore에 상담 신청 내용 저장 중 오류 발생: $e');
+      throw e; // 오류를 UI에 전달
+    }
+  }
 
 
 }

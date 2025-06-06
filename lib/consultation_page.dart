@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_custom_tabs/flutter_custom_tabs.dart' as custom_tabs; // Ensure this is imported
 import 'package:url_launcher/url_launcher.dart'; // Ensure this is imported
 import 'package:smooth_page_indicator/smooth_page_indicator.dart'; // Import the indicator
-
+import 'package:provider/provider.dart';
+import 'app_state.dart'; // Import your ApplicationState class
 class ConsultationPage extends StatefulWidget {
   const ConsultationPage({super.key});
 
@@ -27,7 +28,7 @@ class _ConsultationPageState extends State<ConsultationPage> {
     },
     {
       'id': 'q3',
-      'text': '이 상담이라는 등대를 통해 어떤 잔잔한 항구를 찾고 싶나요? ⚓\n(상담을 통해 기대하는 작은 변화)',
+      'text': '이 상담을 통해 어떤 마음의 잔잔한 항구를 찾고 싶나요? ⚓\n(상담을 통해 기대하는 작은 변화)',
       'hint': '어떤 변화를 기대하시는지 알려주세요...',
     },
   ];
@@ -106,47 +107,60 @@ class _ConsultationPageState extends State<ConsultationPage> {
     }
   }
 
-  void _submitAnswers() {
-    if (googleFormBaseUrl == null || googleFormBaseUrl!.contains("YOUR_FORM_ID")) {
-        ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('상담 신청 양식 URL이 설정되지 않았습니다. 관리자에게 문의하세요.')),
-      );
-      return;
-    }
+void _submitAnswers() async {
+  // 로딩 인디케이터를 보여주기 위한 처리 (선택 사항)
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) => const Center(child: CircularProgressIndicator()),
+  );
 
-    StringBuffer urlParams = StringBuffer();
-    bool firstParam = true;
+  try {
+    final appState = Provider.of<ApplicationState>(context, listen: false);
 
-    for (int i = 0; i < _questions.length; i++) {
-      String questionIdKey = _questions[i]['id']!;
-      String? fieldId = googleFormFieldIds[questionIdKey];
-      String answer = _textControllers[i].text;
+    // 질문과 답변 텍스트 리스트 준비
+    final List<String> questions = _questions.map((q) => q['text']!).toList();
+    final List<String> answers = _textControllers.map((c) => c.text).toList();
 
-      if (fieldId != null && fieldId.isNotEmpty && !fieldId.contains("YOUR_FIELD_ID")) {
-        if (!firstParam) {
-          urlParams.write('&');
-        }
-        urlParams.write('$fieldId=${Uri.encodeComponent(answer)}');
-        firstParam = false;
-      } else {
-        print("Warning: Google Form Field ID for question '${_questions[i]['text']}' is not configured or is a placeholder.");
-      }
-    }
+    await appState.submitConsultation(
+      questions: questions,
+      answers: answers,
+    );
 
-    if (urlParams.isNotEmpty) {
-      final String finalUrl = '$googleFormBaseUrl&$urlParams';
-      print('Launching Google Form URL: $finalUrl'); // For debugging
-      _launchForm(context, finalUrl);
-    } else if (googleFormBaseUrl != null && !googleFormBaseUrl!.contains("YOUR_FORM_ID")) {
-      // If no parameters were added but a base URL exists (maybe a general contact form)
-      print('Launching Google Form URL without specific answers (field IDs might be missing): $googleFormBaseUrl');
-      _launchForm(context, googleFormBaseUrl!);
-    } else {
-       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('답변을 전달할 수 없습니다. Google Form 필드 ID 설정을 확인해주세요.')),
-      );
-    }
+    Navigator.of(context).pop(); // 로딩 인디케이터 닫기
+
+    // 성공 알림 및 사용자-관리자 연결 단계로 이동
+    _showSubmissionSuccessDialog();
+
+  } catch (e) {
+    Navigator.of(context).pop(); // 로딩 인디케이터 닫기
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('오류가 발생했습니다: $e')),
+    );
   }
+}
+
+// 제출 성공 후 보여줄 다이얼로그 (Part 3에서 사용)
+void _showSubmissionSuccessDialog() {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('💌 제출 완료'),
+      content: const Text(
+          '소중한 마음 이야기를 잘 전달했습니다.\n관리자 확인 후 빠른 시일 내에 연락드리겠습니다.'),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop(); // 다이얼로그 닫기
+            Navigator.of(context).pop(); // 상담 페이지 닫고 이전 화면으로
+          },
+          child: const Text('확인'),
+        ),
+      ],
+    ),
+  );
+}
+
 
 
   @override
