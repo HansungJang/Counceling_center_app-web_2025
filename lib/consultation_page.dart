@@ -165,34 +165,6 @@ void _showSubmissionSuccessDialog() {
 
   @override
   Widget build(BuildContext context) {
-    // Fallback UI if googleFormBaseUrl is not set up properly
-    // if (googleFormBaseUrl != null || googleFormBaseUrl!.contains("YOUR_FORM_ID")) {
-    //   return Scaffold(
-    //     appBar: AppBar(title: const Text('마음 이야기 카드')),
-    //     body: Padding(
-    //       padding: const EdgeInsets.all(16.0),
-    //       child: Center(
-    //         child: Column(
-    //           mainAxisAlignment: MainAxisAlignment.center,
-    //           children: [
-    //             const Icon(Icons.error_outline, color: Colors.red, size: 50),
-    //             const SizedBox(height: 20),
-    //             const Text(
-    //               '상담 신청 양식을 불러올 수 없습니다.',
-    //               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-    //               textAlign: TextAlign.center,
-    //             ),
-    //             const SizedBox(height: 12),
-    //             Text(
-    //               '서비스 관리자에게 문의하거나, 다음 연락처로 직접 문의해주세요:\n$fallbackContact',
-    //               textAlign: TextAlign.center,
-    //             ),
-    //           ],
-    //         ),
-    //       ),
-    //     ),
-    //   );
-    // }
 
     return Scaffold(
       appBar: AppBar(
