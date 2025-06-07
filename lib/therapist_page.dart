@@ -142,28 +142,29 @@ class _TherapistPageState extends State<TherapistPage> {
       appBar: AppBar(
         title: const Text('상담사 소개'),
         actions: [
-        // 정보 수정 버튼
-        StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>( // StreamBuilder를 사용하여 therapistDoc을 가져옵니다.
-          stream: appState.getTherapistProfile(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-               return IconButton(
-                icon: const Icon(Icons.edit_note_outlined), // 비활성화된 느낌의 아이콘
-                onPressed: null, // 버튼 비활성화
-                tooltip: '정보 수정 (데이터 없음)',
+        if(appState.isManager) // 관리자일 때만 수정 버튼 표시
+          // 정보 수정 버튼
+          StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>( // StreamBuilder를 사용하여 therapistDoc을 가져옵니다.
+            stream: appState.getTherapistProfile(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return IconButton(
+                  icon: const Icon(Icons.edit_note_outlined), // 비활성화된 느낌의 아이콘
+                  onPressed: null, // 버튼 비활성화
+                  tooltip: '정보 수정 (데이터 없음)',
+                );
+              }
+              // 데이터가 있으면 수정 버튼 활성화
+              return IconButton(
+                icon: const Icon(Icons.edit_note),
+                onPressed: () {
+                  // StreamBuilder에서 받은 snapshot.data (DocumentSnapshot)를 폼에 전달
+                  _showTherapistForm(context, appState, snapshot.data);
+                },
+                  tooltip: snapshot.hasData && snapshot.data!.exists ? '정보 수정' : '정보 입력',
               );
             }
-            // 데이터가 있으면 수정 버튼 활성화
-            return IconButton(
-              icon: const Icon(Icons.edit_note),
-              onPressed: () {
-                // StreamBuilder에서 받은 snapshot.data (DocumentSnapshot)를 폼에 전달
-                _showTherapistForm(context, appState, snapshot.data);
-              },
-                tooltip: snapshot.hasData && snapshot.data!.exists ? '정보 수정' : '정보 입력',
-            );
-          }
-        ),
+          ),
         ],
       ),
       body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(

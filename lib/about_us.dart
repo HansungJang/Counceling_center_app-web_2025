@@ -131,12 +131,13 @@ class _AboutPageState extends State<AboutPage> {
       appBar: AppBar(
                 title: const Text('About Us'),
         actions: [
-          // 새 카드 추가 버튼 (관리자 기능으로 제한할 수 있음)
-          IconButton(
-            icon: const Icon(Icons.add_circle_outline),
-            onPressed: () => _showCardForm(context, appState),
-            tooltip: '새 카드 추가',
-          ),
+          if(appState.isManager) // 관리자 모드일 때만 표시
+            // 새 카드 추가 버튼 (관리자 기능으로 제한할 수 있음)
+            IconButton(
+              icon: const Icon(Icons.add_circle_outline),
+              onPressed: () => _showCardForm(context, appState),
+              tooltip: '새 카드 추가',
+            ),
         ],
       ),
 
@@ -202,58 +203,59 @@ class _AboutPageState extends State<AboutPage> {
             Text(content, style: const TextStyle(fontSize: 16)),
             const SizedBox(height: 16),
             // 수정 및 삭제 버튼 (관리자 기능으로 제한할 수 있음)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.edit, color: Colors.blue),
-                  onPressed: () =>
-                      _showCardForm(context, appState, cardDocument: cardDocument),
-                  tooltip: '수정',
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () async {
-                    // 삭제 확인 다이얼로그
-                    final confirmDelete = await showDialog<bool>(
-                      context: context,
-                      builder: (BuildContext dialogContext) {
-                        return AlertDialog(
-                          title: const Text('카드 삭제'),
-                          content: const Text('정말로 이 카드를 삭제하시겠습니까?'),
-                          actions: <Widget>[
-                            TextButton(
-                              child: const Text('취소'),
-                              onPressed: () =>
-                                  Navigator.of(dialogContext).pop(false),
-                            ),
-                            TextButton(
-                              child: const Text('삭제'),
-                              onPressed: () =>
-                                  Navigator.of(dialogContext).pop(true),
-                            ),
-                          ],
-                        );
-                      },
-                    );
+            if(appState.isManager)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit, color: Colors.blue),
+                    onPressed: () =>
+                        _showCardForm(context, appState, cardDocument: cardDocument),
+                    tooltip: '수정',
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () async {
+                      // 삭제 확인 다이얼로그
+                      final confirmDelete = await showDialog<bool>(
+                        context: context,
+                        builder: (BuildContext dialogContext) {
+                          return AlertDialog(
+                            title: const Text('카드 삭제'),
+                            content: const Text('정말로 이 카드를 삭제하시겠습니까?'),
+                            actions: <Widget>[
+                              TextButton(
+                                child: const Text('취소'),
+                                onPressed: () =>
+                                    Navigator.of(dialogContext).pop(false),
+                              ),
+                              TextButton(
+                                child: const Text('삭제'),
+                                onPressed: () =>
+                                    Navigator.of(dialogContext).pop(true),
+                              ),
+                            ],
+                          );
+                        },
+                      );
 
-                    if (confirmDelete == true) {
-                      try {
-                        await appState.deleteAboutCard(cardDocument.id);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('카드가 삭제되었습니다.')),
-                        );
-                      } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('카드 삭제 실패: $e')),
-                        );
+                      if (confirmDelete == true) {
+                        try {
+                          await appState.deleteAboutCard(cardDocument.id);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('카드가 삭제되었습니다.')),
+                          );
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('카드 삭제 실패: $e')),
+                          );
+                        }
                       }
-                    }
-                  },
-                  tooltip: '삭제',
-                ),
-              ],
-            ),
+                    },
+                    tooltip: '삭제',
+                  ),
+                ],
+              ),
           ],
         ),
       ),

@@ -226,11 +226,12 @@ class _TherapyPageState extends State<TherapyPage> {
       appBar: AppBar(
         title: const Text('상담 분야 안내'),
         backgroundColor: const Color(0xFFE8F5E9), // 연한 녹색 계열
-      ), floatingActionButton: FloatingActionButton(
+      ), floatingActionButton:  appState.isManager
+          ? FloatingActionButton(
         onPressed: () => _showTherapyAreaForm(context, appState),
         tooltip: '새 분야 추가',
         child: const Icon(Icons.add),
-      ),
+      ) : null,
       body: Stack(
         children: [
           // 1. 숲 테마 배경 (은은하게)
@@ -365,22 +366,23 @@ class _TherapyPageState extends State<TherapyPage> {
        ),
 
        // Admin-only buttons
-
-       Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-         IconButton(
-          icon: const Icon(Icons.edit, color: Colors.blueGrey, size: 20),
-          onPressed: () => _showTherapyAreaForm(context, appState, therapyDoc: doc),
-          tooltip: '수정',
-         ),
-         IconButton(
-          icon: const Icon(Icons.delete, color: Colors.redAccent, size: 20),
-          onPressed: () => _confirmDelete(context, appState, doc.id),
-          tooltip: '삭제',
-         ),
-        ],
-       )
+       // [수정] 관리자일 때만 수정/삭제 버튼 Row가 보이도록 if문 추가
+      if (appState.isManager)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+            IconButton(
+              icon: const Icon(Icons.edit, color: Colors.blueGrey, size: 20),
+              onPressed: () => _showTherapyAreaForm(context, appState, therapyDoc: doc),
+              tooltip: '수정',
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete, color: Colors.redAccent, size: 20),
+              onPressed: () => _confirmDelete(context, appState, doc.id),
+              tooltip: '삭제',
+            ),
+            ],
+          )
       ],
      ),
     ),

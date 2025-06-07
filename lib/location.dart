@@ -140,7 +140,7 @@ class _LocationPageState extends State<LocationPage> {
       appBar: AppBar(
         title: const Text('찾아오시는 길'),
         actions: [
-          // if (appState.isManager)
+        if (appState.isManager)
             IconButton(
               icon: const Icon(Icons.edit),
               onPressed: () async {

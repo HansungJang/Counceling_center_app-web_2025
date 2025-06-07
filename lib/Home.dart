@@ -28,15 +28,23 @@ class HomePage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('마음 쉼'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.lock_outline),
-            tooltip: '관리자 로그인',
-            onPressed: () {
-              // ScaffoldMessenger.of(context).showSnackBar(
-              //   const SnackBar(content: Text('Manager login not yet implemented')),
-              // );
-              appState.showManagerLogin(context);
-            },
+          Consumer<ApplicationState>(
+            builder: (context, appState, child) {
+              return IconButton(
+                icon:  Icon( appState.isManager ? Icons.lock_open : Icons.lock_outline,),
+                tooltip: appState.isManager ? '관리자 모드' : '관리자 로그인',
+                onPressed: () {
+                  // [수정] 관리자가 아닐 때만 로그인 다이얼로그 표시
+                  if (!appState.isManager) {
+                    appState.showManagerLogin(context);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('이미 관리자 모드로 로그인되어 있습니다.')),
+                    );
+                  }
+                },
+              );
+            }
           ),
           IconButton(
             icon: const Icon(Icons.logout),
