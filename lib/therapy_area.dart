@@ -4,27 +4,46 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'app_state.dart'; // ApplicationState import
+import 'therapy_area_detail.dart'; // Import the new detail page
 
-// 아이콘 이름을 IconData로 매핑하는 함수 (개선 필요)
+// 아이콘 이름을 IconData로 매핑하는 함수 (개선 필요)  
+// IconData getIconDataFromString(String iconName) {
+//   // 간단한 예시입니다. 실제로는 더 많은 아이콘을 매핑하거나 다른 방식을 사용해야 합니다.
+//   switch (iconName.toLowerCase()) {
+//     case 'child_care':
+//       return Icons.child_care;
+//     case 'school':
+//       return Icons.school;
+//     case 'favorite':
+//       return Icons.favorite;
+//     case 'people':
+//       return Icons.people;
+//     case 'healing':
+//       return Icons.healing;
+//     case 'spa': // 번아웃/트라우마에 대한 아이콘 예시
+//       return Icons.spa; // 또는 Icons.psychology, Icons.self_improvement 등
+//     default:
+//       return Icons.help_outline; // 기본 아이콘
+//   }
+// }
+
+final Map<String, IconData> _iconMap = {
+  'child_care': Icons.child_care,
+  'school': Icons.school,
+  'favorite': Icons.favorite,
+  'people': Icons.people,
+  'healing': Icons.healing,
+  'spa': Icons.spa,
+  'psychology': Icons.psychology,
+  'self_improvement': Icons.self_improvement,
+  'help_outline': Icons.help_outline,
+};
+
+// Updated function to get IconData from the map.
 IconData getIconDataFromString(String iconName) {
-  // 간단한 예시입니다. 실제로는 더 많은 아이콘을 매핑하거나 다른 방식을 사용해야 합니다.
-  switch (iconName.toLowerCase()) {
-    case 'child_care':
-      return Icons.child_care;
-    case 'school':
-      return Icons.school;
-    case 'favorite':
-      return Icons.favorite;
-    case 'people':
-      return Icons.people;
-    case 'healing':
-      return Icons.healing;
-    case 'spa': // 번아웃/트라우마에 대한 아이콘 예시
-      return Icons.spa; // 또는 Icons.psychology, Icons.self_improvement 등
-    default:
-      return Icons.help_outline; // 기본 아이콘
-  }
+  return _iconMap[iconName.toLowerCase()] ?? Icons.help_outline; // Default icon
 }
+
 
 class TherapyPage extends StatefulWidget {
   const TherapyPage({super.key});
@@ -34,9 +53,170 @@ class TherapyPage extends StatefulWidget {
 }
 
 class _TherapyPageState extends State<TherapyPage> {
-  // 카드 탭 시 확대/축소 효과를 위한 상태
-  String? _selectedCardId;
+ 
+   // Form dialog for adding/editing therapy areas [Create/Update]
+  void _showTherapyAreaForm(BuildContext context, ApplicationState appState,
+      {DocumentSnapshot<Map<String, dynamic>>? therapyDoc}) {
+    final formKey = GlobalKey<FormState>();
+    String title = therapyDoc?['title'] ?? '';
+    String description = therapyDoc?['description'] ?? '';
+    String iconName = therapyDoc?['iconName'] ?? 'healing';
+    int order = therapyDoc?['order'] ?? 0;
 
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Text(therapyDoc == null ? '새 상담 분야 추가' : '상담 분야 수정'),
+              content: SingleChildScrollView(
+                child: Form(
+                  key: formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      TextFormField(
+                        initialValue: title,
+                        decoration: const InputDecoration(labelText: '제목'),
+                        validator: (value) =>
+                            value == null || value.isEmpty ? '제목을 입력해주세요.' : null,
+                        onSaved: (value) => title = value!,
+                      ),
+                      TextFormField(
+                        initialValue: description,
+                        decoration: const InputDecoration(labelText: '설명'),
+                        maxLines: 4,
+                        validator: (value) =>
+                            value == null || value.isEmpty ? '설명을 입력해주세요.' : null,
+                        onSaved: (value) => description = value!,
+                      ),
+                      // TextFormField(
+                      //   initialValue: iconName,
+                      //   decoration: const InputDecoration(
+                      //       labelText: '아이콘 이름', hintText: '예: child_care, school, healing'),
+                      //   validator: (value) =>
+                      //       value == null || value.isEmpty ? '아이콘 이름을 입력해주세요.' : null,
+                      //   onSaved: (value) => iconName = value!,
+                      // ),
+                          DropdownButtonFormField<String>(
+                            value: iconName,
+                            decoration: const InputDecoration(labelText: '아이콘 선택'),
+                            items: _iconMap.entries.map((entry) {
+                              return DropdownMenuItem<String>(
+                                value: entry.key,
+                                child: Row(
+                                  children: [
+                                    Icon(entry.value, color: Theme.of(context).primaryColor),
+                                    const SizedBox(width: 10),
+                                    Text(entry.key),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (String? newValue) {
+                              if (newValue != null) {
+                                // Use the dialog's own state update function
+                                setDialogState(() {
+                                  iconName = newValue;
+                                });
+                              }
+                            },
+                            validator: (value) =>
+                                value == null || value.isEmpty ? '아이콘을 선택해주세요.' : null,
+                            onSaved: (value) => iconName = value ?? _iconMap.keys.first,
+                          ),
+            
+                      TextFormField(
+                        initialValue: order.toString(),
+                        decoration: const InputDecoration(labelText: '순서 (숫자)'),
+                        keyboardType: TextInputType.number,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) return '순서를 입력해주세요.';
+                          if (int.tryParse(value) == null) return '숫자만 입력 가능합니다.';
+                          return null;
+                        },
+                        onSaved: (value) => order = int.parse(value!),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  child: const Text('취소'),
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                ),
+                ElevatedButton(
+                  child: Text(therapyDoc == null ? '추가' : '저장'),
+                  onPressed: () async {
+                    if (formKey.currentState!.validate()) {
+                      formKey.currentState!.save();
+                      try {
+                        if (therapyDoc == null) {
+                          await appState.addTherapyArea(
+                              title, description, iconName, order);
+                        } else {
+                          await appState.updateTherapyArea(
+                              therapyDoc.id, title, description, iconName, order);
+                        }
+                        Navigator.of(dialogContext).pop();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('작업이 완료되었습니다.')),
+                        );
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('오류 발생: $e')),
+                        );
+                      }
+                    }
+                  },
+                ),
+              ],
+            );
+          }
+        );
+      },
+    );
+  }
+ 
+   // Delete confirmation dialog [Delete]
+  Future<void> _confirmDelete(BuildContext context, ApplicationState appState, String docId) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('삭제 확인'),
+        content: const Text('정말로 이 항목을 삭제하시겠습니까?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('삭제'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await appState.deleteTherapyArea(docId);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('삭제되었습니다.')),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('삭제 중 오류 발생: $e')),
+        );
+      }
+    }
+  }
+
+ 
+  // 카드 탭 시 확대/축소 효과를 위한 상태
+  //String? _selectedCardId;
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<ApplicationState>(context);
@@ -46,6 +226,10 @@ class _TherapyPageState extends State<TherapyPage> {
       appBar: AppBar(
         title: const Text('상담 분야 안내'),
         backgroundColor: const Color(0xFFE8F5E9), // 연한 녹색 계열
+      ), floatingActionButton: FloatingActionButton(
+        onPressed: () => _showTherapyAreaForm(context, appState),
+        tooltip: '새 분야 추가',
+        child: const Icon(Icons.add),
       ),
       body: Stack(
         children: [
@@ -85,34 +269,18 @@ class _TherapyPageState extends State<TherapyPage> {
                 itemBuilder: (context, index) {
                   final doc = therapyDocs[index];
                   final data = doc.data();
-                  final cardId = doc.id; // Firestore 문서 ID
+                  //final cardId = doc.id; // Firestore 문서 ID
 
                   // Firestore에서 가져온 데이터 사용
-                  String title = data['title'] ?? '제목 없음';
-                  String description = data['description'] ?? '설명 없음';
-                  String iconName = data['iconName'] ?? 'help_outline';
-                  // String? imagePath = data['imagePath']; // 카드별 배경 이미지 (선택 사항)
-
                   return _buildTherapyCard(
-                    context: context,
-                    id: cardId,
-                    title: title,
-                    description: description,
-                    iconData: getIconDataFromString(iconName),
-                    // cardImagePath: imagePath, // 카드별 이미지 경로 전달
-                    isSelected: _selectedCardId == cardId,
-                    onTap: () {
-                      setState(() {
-                        if (_selectedCardId == cardId) {
-                          _selectedCardId = null; // 다시 탭하면 원래 크기로
-                        } else {
-                          _selectedCardId = cardId; // 탭한 카드 선택
-                        }
-                      });
-                      // TODO: 카드 탭 시 상세 페이지로 이동하거나 추가 정보 표시 로직
-                      print('$title 카드 탭됨');
-                    },
+                  context: context,
+                  appState: appState,
+                  doc: doc,
+                  title: data['title'] ?? '제목 없음',
+                  description: data['description'] ?? '설명 없음',
+                  iconData: getIconDataFromString(data['iconName'] ?? 'help_outline'),
                   );
+                 
                 },
               );
             },
@@ -125,99 +293,99 @@ class _TherapyPageState extends State<TherapyPage> {
 
   Widget _buildTherapyCard({
     required BuildContext context,
-    required String id,
+    required ApplicationState appState,
+    required DocumentSnapshot<Map<String, dynamic>> doc,
+    // required String id,
     required String title,
     required String description,
     required IconData iconData,
     String? cardImagePath, // 카드별 배경 이미지 (선택적)
-    required bool isSelected,
-    required VoidCallback onTap,
+    // required bool isSelected,
+    // required VoidCallback onTap,
   }) {
     final theme = Theme.of(context);
     final cardColor = Colors.green.shade50.withOpacity(0.85); // 숲 테마 카드 색상
     final splashColor = theme.primaryColor.withOpacity(0.2);
 
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeInOut,
-        transform: Matrix4.identity()..scale(isSelected ? 1.03 : 1.0), // 선택 시 살짝 확대
-        margin: const EdgeInsets.symmetric(vertical: 8.0),
-        child: Card(
-          elevation: isSelected ? 8.0 : 4.0, // 선택 시 그림자 강조
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15.0),
-            side: BorderSide(
-              color: isSelected ? theme.primaryColor : Colors.transparent,
-              width: isSelected ? 2.0 : 0.0,
-            )
-          ),
-          color: cardColor,
-          // 만약 카드별 이미지가 있다면 ClipRRect와 Stack을 사용해 배경으로 깔 수 있습니다.
-          // child: cardImagePath != null && cardImagePath.isNotEmpty
-          // ? ClipRRect(
-          //     borderRadius: BorderRadius.circular(15.0),
-          //     child: Stack(
-          //       children: [
-          //         Positioned.fill(
-          //           child: Opacity(
-          //             opacity: 0.3, // 이미지 투명도
-          //             child: Image.asset(cardImagePath, fit: BoxFit.cover),
-          //           ),
-          //         ),
-          //         _buildCardContent(title, description, iconData, theme, splashColor),
-          //       ],
-          //     ),
-          //   )
-          // : _buildCardContent(title, description, iconData, theme, splashColor),
-          child: _buildCardContent(title, description, iconData, theme, splashColor),
-        ),
-      ),
-    );
-  }
 
-  Widget _buildCardContent(
-      String title, String description, IconData iconData, ThemeData theme, Color splashColor) {
-    return InkWell(
-      splashColor: splashColor,
-      highlightColor: splashColor.withOpacity(0.1),
-      borderRadius: BorderRadius.circular(15.0),
-      onTap: () { /* GestureDetector에서 처리하므로 여기서는 비워두거나 추가 액션 */ },
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          children: [
-            Icon(iconData, size: 40.0, color: theme.primaryColor), // Color(0xFF7D9D81)
-            const SizedBox(width: 16.0),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 18.0,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green.shade800,
-                    ),
-                  ),
-                  const SizedBox(height: 6.0),
-                  Text(
-                    description,
-                    style: TextStyle(
-                      fontSize: 14.0,
-                      color: Colors.green.shade700,
-                      height: 1.4,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(Icons.arrow_forward_ios, size: 16.0, color: Colors.grey),
-          ],
-        ),
+  return Card(
+   margin: const EdgeInsets.symmetric(vertical: 8.0),
+   child: InkWell(
+    onTap: () {
+     Navigator.push(
+      context,
+      MaterialPageRoute(
+       builder: (context) => TherapyAreaDetailPage(
+        title: title,
+        description: description,
+        iconName: doc.data()?['iconName'] ?? 'healing',
+       ),
       ),
-    );
+     );
+    },
+
+    borderRadius: BorderRadius.circular(15.0),
+    child: Padding(
+     padding: const EdgeInsets.all(16.0),
+     child: Column(
+      children: [
+       Row(
+        children: [
+         Icon(iconData, size: 40.0, color: theme.primaryColor),
+         const SizedBox(width: 16.0),
+         Expanded(
+          child: Column(
+           crossAxisAlignment: CrossAxisAlignment.start,
+           children: [
+            Text(
+             title,
+             style: TextStyle(
+              fontSize: 18.0,
+              fontWeight: FontWeight.bold,
+              color: Colors.green.shade800,
+             ),
+            ),
+
+            const SizedBox(height: 6.0),
+            Text(
+             description,
+             maxLines: 2,
+             overflow: TextOverflow.ellipsis,
+             style: TextStyle(
+              fontSize: 14.0,
+              color: Colors.green.shade700,
+              height: 1.4,
+             ),
+            ),
+           ],
+          ),
+         ),
+         const Icon(Icons.arrow_forward_ios, size: 16.0, color: Colors.grey),
+        ],
+       ),
+
+       // Admin-only buttons
+
+       Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+         IconButton(
+          icon: const Icon(Icons.edit, color: Colors.blueGrey, size: 20),
+          onPressed: () => _showTherapyAreaForm(context, appState, therapyDoc: doc),
+          tooltip: '수정',
+         ),
+         IconButton(
+          icon: const Icon(Icons.delete, color: Colors.redAccent, size: 20),
+          onPressed: () => _confirmDelete(context, appState, doc.id),
+          tooltip: '삭제',
+         ),
+        ],
+       )
+      ],
+     ),
+    ),
+   ),
+  );
+
   }
 }

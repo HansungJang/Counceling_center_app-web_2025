@@ -301,6 +301,53 @@ class ApplicationState extends ChangeNotifier {
         .snapshots();
   }
 
+  // Therapy Area 추가
+  Future<void> addTherapyArea(String title, String description, String iconName, int order) async {
+    if (_user == null) return; // Optional: Add admin role check here
+    try {
+      await _firestore.collection('therapy_areas').add({
+        'title': title,
+        'description': description,
+        'iconName': iconName,
+        'order': order,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      print("Therapy Area 추가 성공");
+    } catch (e) {
+      print("Therapy Area 추가 실패: $e");
+      throw e;
+    }
+  }
+
+  // Therapy Area 수정
+  Future<void> updateTherapyArea(String docId, String title, String description, String iconName, int order) async {
+    if (_user == null) return; // Optional: Add admin role check here
+    try {
+      await _firestore.collection('therapy_areas').doc(docId).update({
+        'title': title,
+        'description': description,
+        'iconName': iconName,
+        'order': order,
+      });
+      print("Therapy Area 수정 성공");
+    } catch (e) {
+      print("Therapy Area 수정 실패: $e");
+      throw e;
+    }
+  }
+  
+    // Therapy Area 삭제
+  Future<void> deleteTherapyArea(String docId) async {
+    if (_user == null) return; // Optional: Add admin role check here
+    try {
+      await _firestore.collection('therapy_areas').doc(docId).delete();
+      print("Therapy Area 삭제 성공");
+    } catch (e) {
+      print("Therapy Area 삭제 실패: $e");
+      throw e;
+    }
+  }
+  
   // 관리자를 위한 Therapy Area 추가/수정/삭제 메소드 (about_us.dart 와 유사하게 구현 가능)
   // 예시: addTherapyArea, updateTherapyArea, deleteTherapyArea
   // 이 부분은 현재 요청의 핵심이 아니므로, 필요시 about_us.dart를 참고하여 추가해주세요.
