@@ -131,44 +131,62 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
+// Future<void> signInAsGuest(BuildContext context) async {
+//   final prefs = await SharedPreferences.getInstance();
+//   final savedUid = prefs.getString('anonymous_uid');
+
+//   try {
+//     if (savedUid != null) {
+//       final response = await http.post(
+//         Uri.parse(
+//           'https://us-central1-counceling-project2025.cloudfunctions.net/getCustomToken',
+//         ),
+//         headers: {'Content-Type': 'application/json'},
+//         body: jsonEncode({'uid': savedUid}),
+//       );
+
+//       if (response.statusCode == 200) {
+//         final token = jsonDecode(response.body)['token'];
+//         await FirebaseAuth.instance.signInWithCustomToken(token);
+//       } else {
+//         await prefs.remove('anonymous_uid');
+//         final userCred = await FirebaseAuth.instance.signInAnonymously();
+//         final newUid = userCred.user?.uid;
+//         if (newUid != null) {
+//           await prefs.setString('anonymous_uid', newUid);
+//         }
+//       }
+//     } else {
+//       final userCred = await FirebaseAuth.instance.signInAnonymously();
+//       final newUid = userCred.user?.uid;
+//       if (newUid != null) {
+//         await prefs.setString('anonymous_uid', newUid);
+//       }
+//     }
+
+//     final appState = Provider.of<ApplicationState>(context, listen: false);
+//     await appState.waitUntilUserSynced();
+
+//     Navigator.pushReplacementNamed(context, "/");
+//   } catch (e) {
+//     print('❌ 로그인 실패: $e');
+//   }
+// }
+
 Future<void> signInAsGuest(BuildContext context) async {
-  final prefs = await SharedPreferences.getInstance();
-  final savedUid = prefs.getString('anonymous_uid');
-
   try {
-    if (savedUid != null) {
-      final response = await http.post(
-        Uri.parse(
-          'https://us-central1-counceling-project2025.cloudfunctions.net/getCustomToken',
-        ),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'uid': savedUid}),
-      );
+    // Firebase 익명 로그인을 직접 호출하는 가장 간단한 방식입니다.
+    await FirebaseAuth.instance.signInAnonymously();
 
-      if (response.statusCode == 200) {
-        final token = jsonDecode(response.body)['token'];
-        await FirebaseAuth.instance.signInWithCustomToken(token);
-      } else {
-        await prefs.remove('anonymous_uid');
-        final userCred = await FirebaseAuth.instance.signInAnonymously();
-        final newUid = userCred.user?.uid;
-        if (newUid != null) {
-          await prefs.setString('anonymous_uid', newUid);
-        }
-      }
-    } else {
-      final userCred = await FirebaseAuth.instance.signInAnonymously();
-      final newUid = userCred.user?.uid;
-      if (newUid != null) {
-        await prefs.setString('anonymous_uid', newUid);
-      }
-    }
+    // ApplicationState가 authStateChanges 리스너를 통해
+    // 후속 작업을 처리하고 홈 화면으로 리디렉션할 것입니다.
+    // 여기서는 별도의 화면 이동 로직이 필요 없습니다.
 
-    final appState = Provider.of<ApplicationState>(context, listen: false);
-    await appState.waitUntilUserSynced();
-
-    Navigator.pushReplacementNamed(context, "/");
   } catch (e) {
-    print('❌ 로그인 실패: $e');
+    // 로그인 실패 시 에러 메시지를 화면에 표시합니다.
+    print('❌ 익명 로그인 실패: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('익명 로그인에 실패했습니다: $e')),
+    );
   }
 }
