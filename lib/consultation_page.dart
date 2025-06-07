@@ -1,5 +1,7 @@
 // consultation_page.dart
 
+// [TODO / need] 사용자 답변 이후 UI/Google sheet 사용자 응답 정리 연동 구현 (report: 25.06.07.)
+
 import 'package:flutter/material.dart';
 import 'package:flutter_custom_tabs/flutter_custom_tabs.dart' as custom_tabs; // Ensure this is imported
 import 'package:url_launcher/url_launcher.dart'; // Ensure this is imported
