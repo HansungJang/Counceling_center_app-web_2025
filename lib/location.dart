@@ -20,6 +20,23 @@ class _LocationPageState extends State<LocationPage> {
   LatLng? _targetCoordinates;
   String _currentAddress = '';
 
+  @override // 변경된 주소로 지도 위치를 업데이트하기 위해 initState에서 geocodeAddress 호출
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Re-geocode if the address changes in Firestore
+    final appState = Provider.of<ApplicationState>(context);
+    appState.getCenterInfo().listen((snapshot) {
+      if (snapshot.exists && snapshot.data()?['address'] != null) {
+        final newAddress = snapshot.data()!['address'];
+        if (newAddress != _currentAddress) {
+          _currentAddress = newAddress;
+          _geocodeAddress(newAddress);
+        }
+      }
+    });
+  }
+
+
   // 주소를 위도/경도로 변환하는 함수
   Future<void> _geocodeAddress(String address) async {
     if (!mounted || address.isEmpty) return;
@@ -123,7 +140,7 @@ class _LocationPageState extends State<LocationPage> {
       appBar: AppBar(
         title: const Text('찾아오시는 길'),
         actions: [
-          if (appState.isManager)
+          // if (appState.isManager)
             IconButton(
               icon: const Icon(Icons.edit),
               onPressed: () async {

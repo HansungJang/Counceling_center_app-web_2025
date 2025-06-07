@@ -88,7 +88,7 @@ class ApplicationState extends ChangeNotifier {
     }
   }
 
-  Future<void> waitUntilUserSynced() async {
+  Future<void> waitUntilUserSynced() async { // 계정 생성 후 사용자 정보가 Firestore에 저장될 때까지 기다리는 메소드
     while (_user == null) {
       await Future.delayed(Duration(milliseconds: 100));
     }
