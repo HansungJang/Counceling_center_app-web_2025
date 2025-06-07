@@ -16,6 +16,10 @@ class ApplicationState extends ChangeNotifier {
   final String _therapistProfileDocId = 'main_therapist'; // Therapist profile document ID
   String get therapistProfileDocId => _therapistProfileDocId; // getter 추가, therapist_page.dart에서 edit button에 활용
   
+  // Add this property (관리자 권한 확인)
+  bool get isManager => _user != null && !_user!.isAnonymous;
+
+
   User? _user;
   User? get user => _user;
 
@@ -23,6 +27,7 @@ class ApplicationState extends ChangeNotifier {
     _auth.authStateChanges().listen(_onAuthStateChanged);
     ensureTherapistProfileExists();
     ensureSampleTherapyAreasExist();
+    ensureCenterInfoExists();
   }
 
 // #1. [login methods]
@@ -347,7 +352,7 @@ class ApplicationState extends ChangeNotifier {
       throw e;
     }
   }
-  
+
   // 관리자를 위한 Therapy Area 추가/수정/삭제 메소드 (about_us.dart 와 유사하게 구현 가능)
   // 예시: addTherapyArea, updateTherapyArea, deleteTherapyArea
   // 이 부분은 현재 요청의 핵심이 아니므로, 필요시 about_us.dart를 참고하여 추가해주세요.
@@ -432,5 +437,51 @@ class ApplicationState extends ChangeNotifier {
     }
   }
 
+  // #6. [location methods] 연락처정보 수정 
+  Stream<DocumentSnapshot<Map<String, dynamic>>> getCenterInfo() {
+    return _firestore.collection('center_info').doc('contact').snapshots();
+  }
 
+  Future<void> updateCenterInfo({
+    required String address,
+    required String phone,
+    required String email,
+    required String kakaoLink,
+    required String googleMapsUrl,
+  }) async {
+    // if (!isManager) return;
+    try {
+      await _firestore.collection('center_info').doc('contact').set({
+        'address': address,
+        'phone': phone,
+        'email': email,
+        'kakaoLink': kakaoLink,
+        'googleMapsUrl': googleMapsUrl,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    } catch (e) {
+      print("Center info update failed: $e");
+      throw e;
+    }
+  }
+
+  Future<void> ensureCenterInfoExists() async {
+    final docRef = _firestore.collection('center_info').doc('contact');
+    try{
+    final snapshot = await docRef.get();
+      if (!snapshot.exists) {
+        print('Creating initial center info document.');
+        await docRef.set({
+          'address': '경기도 수원시 권선구 경수대로 373 (권선동)',
+          'phone': '+82 10-1234-5678',
+          'email': 'mindrest@counsel.kr',
+          'kakaoLink': 'https://pf.kakao.com/_kakaochatlink',
+          'googleMapsUrl': 'https://maps.app.goo.gl/your_map_link_here',
+        });
+      }
+    } catch (e) {
+      // [추가] 오류 발생 시 로그 출력
+      print('Error ensuring center info exists: $e');
+    }
+  }
 }

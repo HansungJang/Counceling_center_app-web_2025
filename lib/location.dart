@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geocoding/geocoding.dart'; // Import for geocoding if needed (경도, 위도 표기)
-
+import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'app_state.dart';
 class LocationPage extends StatefulWidget {
   const LocationPage({super.key});
 
@@ -13,32 +15,14 @@ class LocationPage extends StatefulWidget {
 }
 
 class _LocationPageState extends State<LocationPage> {
-
-  final String address = ' 경기도 수원시 권선구 경수대로 373 (권선동)';  
-  final String phone = '+82 10-1234-5678';
-  final String email = 'mindrest@counsel.kr';
-  final String mapUrl =
-      'https://www.google.com/maps/?entry=ttu&g_ep=EgoyMDI1MDUxNS4wIKXMDSoASAFQAw%3D%3D';
-
   GoogleMapController? _mapController;
-  LatLng? _targetCoordinates;
   final Set<Marker> _markers = {};
-  bool _isLoading = true;
-  String? _errorMessage;
+  LatLng? _targetCoordinates;
+  String _currentAddress = '';
 
-  @override
-  void initState() {
-    super.initState();
-    _geocodeAddress();
-  }
-
-  Future<void> _geocodeAddress() async {
-    if (!mounted) return;
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
+  // 주소를 위도/경도로 변환하는 함수
+  Future<void> _geocodeAddress(String address) async {
+    if (!mounted || address.isEmpty) return;
     try {
       List<Location> locations = await locationFromAddress(address);
       if (locations.isNotEmpty) {
@@ -46,147 +30,184 @@ class _LocationPageState extends State<LocationPage> {
         if (mounted) {
           setState(() {
             _targetCoordinates = LatLng(location.latitude, location.longitude);
-            _markers.clear(); // 기존 마커 제거
+            _markers.clear();
             _markers.add(
               Marker(
-                markerId: MarkerId(address), // 고유한 ID
+                markerId: MarkerId(address),
                 position: _targetCoordinates!,
                 infoWindow: InfoWindow(title: '상담센터 위치', snippet: address),
               ),
             );
-            _isLoading = false;
-          });
-        }
-      } else {
-        if (mounted) {
-          setState(() {
-            _errorMessage = '주소를 찾을 수 없습니다: $address';
-            _isLoading = false;
-            // 주소를 찾지 못했을 때 기본 위치 (예: 서울 중심)
-            _targetCoordinates = const LatLng(37.5665, 126.9780); 
-             _markers.clear();
-            _markers.add(
-              Marker(
-                markerId: const MarkerId('default_location'),
-                position: _targetCoordinates!,
-                infoWindow: InfoWindow(title: '오류', snippet: _errorMessage),
-              ),
-            );
+            _mapController?.animateCamera(CameraUpdate.newLatLng(_targetCoordinates!));
           });
         }
       }
     } catch (e) {
       print('Geocoding Error: $e');
-      if (mounted) {
-        setState(() {
-          _errorMessage = '주소 변환 중 오류가 발생했습니다. API 키와 네트워크 연결을 확인해주세요.';
-          _isLoading = false;
-          // 오류 발생 시 기본 위치
-          _targetCoordinates = const LatLng(37.5665, 126.9780); 
-          _markers.clear();
-          _markers.add(
-            Marker(
-              markerId: const MarkerId('error_location'),
-              position: _targetCoordinates!,
-              infoWindow: InfoWindow(title: '오류', snippet: '위치를 불러올 수 없습니다.'),
-            ),
-          );
-        });
-      }
+      // 오류 발생 시 UI에 알림 (선택 사항)
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('주소를 변환할 수 없습니다: $address')),
+      );
     }
   }
 
-
+  // 외부 링크를 여는 함수
   void _launchUrl(String url) async {
+    if (url.isEmpty) return;
     final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
     } else {
-      throw 'Could not launch $url';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not launch $url')),
+      );
     }
+  }
+  
+  // 정보 수정 폼을 보여주는 함수
+  void _showInfoForm(BuildContext context, ApplicationState appState, DocumentSnapshot<Map<String, dynamic>>? infoDoc) {
+    // ... (이전과 동일한 _showInfoForm 코드는 여기에 위치합니다)
+    final formKey = GlobalKey<FormState>();
+    final data = infoDoc?.data() ?? {};
+    String address = data['address'] ?? '';
+    String phone = data['phone'] ?? '';
+    String email = data['email'] ?? '';
+    String kakaoLink = data['kakaoLink'] ?? '';
+    String googleMapsUrl = data['googleMapsUrl'] ?? '';
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('센터 정보 수정'),
+        content: SingleChildScrollView(
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(initialValue: address, decoration: const InputDecoration(labelText: '주소'), onSaved: (v) => address = v!),
+                TextFormField(initialValue: phone, decoration: const InputDecoration(labelText: '전화번호'), onSaved: (v) => phone = v!),
+                TextFormField(initialValue: email, decoration: const InputDecoration(labelText: '이메일'), onSaved: (v) => email = v!),
+                TextFormField(initialValue: kakaoLink, decoration: const InputDecoration(labelText: '카카오톡 채널 링크'), onSaved: (v) => kakaoLink = v!),
+                TextFormField(initialValue: googleMapsUrl, decoration: const InputDecoration(labelText: '구글맵 링크'), onSaved: (v) => googleMapsUrl = v!),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: const Text('취소')),
+          ElevatedButton(
+            child: const Text('저장'),
+            onPressed: () async {
+              if (formKey.currentState!.validate()) {
+                formKey.currentState!.save();
+                try {
+                  await appState.updateCenterInfo(address: address, phone: phone, email: email, kakaoLink: kakaoLink, googleMapsUrl: googleMapsUrl);
+                  Navigator.of(dialogContext).pop();
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                }
+              }
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final appState = Provider.of<ApplicationState>(context);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Location')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Address',
-              style: TextStyle(fontWeight: FontWeight.bold),
+      appBar: AppBar(
+        title: const Text('찾아오시는 길'),
+        actions: [
+          if (appState.isManager)
+            IconButton(
+              icon: const Icon(Icons.edit),
+              onPressed: () async {
+                final doc = await appState.getCenterInfo().first;
+                _showInfoForm(context, appState, doc);
+              },
             ),
-            const SizedBox(height: 4),
-            Text(address),
-            const SizedBox(height: 16),
+        ],
+      ),
+      body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+        stream: appState.getCenterInfo(),
+        builder: (context, snapshot) {
+          // 상태 1: 에러 발생
+          if (snapshot.hasError) return Center(child: Text("오류가 발생했습니다: ${snapshot.error}"));
 
-            // --- Google Map Widget ---
-            Expanded(
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _errorMessage != null
-                      ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Text(
-                              _errorMessage!,
-                              style: const TextStyle(color: Colors.red, fontSize: 16),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        )
-                      : _targetCoordinates == null // 혹시 모를 null 상황 방지
-                          ? const Center(child: Text('지도 데이터를 가져올 수 없습니다.'))
-                          : GoogleMap(
-                              mapType: MapType.normal,
-                              initialCameraPosition: CameraPosition(
-                                target: _targetCoordinates!,
-                                zoom: 16.0, // 확대 수준 (15.0 ~ 17.0 사이 추천)
-                              ),
-                              markers: _markers,
-                              onMapCreated: (GoogleMapController controller) {
-                                _mapController = controller;
-                              },
-                              // 필요시 지도 관련 설정 추가
-                              // zoomControlsEnabled: false,
-                              // myLocationButtonEnabled: false,
-                            ),
-            ),
-            // --- ---
-            const SizedBox(height: 16),
+          // 상태 2: 데이터 기다리는 중
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
+          // 상태 3: 데이터는 도착했으나, 문서가 없는 경우 (초기 생성 중)
+          if (!snapshot.hasData || !snapshot.data!.exists) {
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('센터 정보를 초기화하는 중입니다...'),
+                ],
+              ),
+            );
+          }
+          
+          // 상태 4: 데이터 수신 성공
+          final data = snapshot.data!.data()!;
+          final newAddress = data['address'] as String? ?? '';
 
-            ElevatedButton.icon(
-              onPressed: () => _launchUrl(mapUrl),
-              icon: const Icon(Icons.map),
-              label: const Text('View on Google Maps'),
+          // 주소가 변경되었을 때만 geocoding 재실행
+          if (newAddress.isNotEmpty && newAddress != _currentAddress) {
+            _currentAddress = newAddress;
+            // build가 완료된 후 geocoding을 실행하여 UI 충돌 방지
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+               _geocodeAddress(newAddress);
+            });
+          }
+
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Address', style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 4),
+                Text(data['address'] ?? '주소 정보 없음'),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: _targetCoordinates == null
+                      ? const Center(child: Text('지도 위치를 변환하는 중입니다...'))
+                      : GoogleMap(
+                          mapType: MapType.normal,
+                          initialCameraPosition: CameraPosition(target: _targetCoordinates!, zoom: 16.0),
+                          markers: _markers,
+                          onMapCreated: (controller) => _mapController = controller,
+                        ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () => _launchUrl(data['googleMapsUrl'] ?? ''),
+                    icon: const Icon(Icons.map_outlined),
+                    label: const Text('Google Maps에서 보기'),
+                  ),
+                ),
+                const Divider(height: 32),
+                const Text('Contact Us', style: TextStyle(fontWeight: FontWeight.bold)),
+                ListTile(leading: const Icon(Icons.phone_outlined), title: Text(data['phone'] ?? ''), onTap: () => _launchUrl('tel:${data['phone']}')),
+                ListTile(leading: const Icon(Icons.email_outlined), title: Text(data['email'] ?? ''), onTap: () => _launchUrl('mailto:${data['email']}')),
+                ListTile(leading: const Icon(Icons.chat_bubble_outline), title: const Text('카카오톡 채널로 문의'), onTap: () => _launchUrl(data['kakaoLink'] ?? '')),
+              ],
             ),
-            const SizedBox(height: 24),
-            const Text(
-              'Contact Us',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            ListTile(
-              leading: const Icon(Icons.phone),
-              title: Text(phone),
-              onTap: () => _launchUrl('tel:$phone'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.email),
-              title: Text(email),
-              onTap: () => _launchUrl('mailto:$email'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.chat),
-              title: const Text('Chat via KakaoTalk'),
-              onTap: () => _launchUrl('https://pf.kakao.com/_kakaochatlink'),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
