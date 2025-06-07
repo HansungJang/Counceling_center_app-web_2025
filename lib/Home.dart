@@ -32,9 +32,10 @@ class HomePage extends StatelessWidget {
             icon: const Icon(Icons.lock_outline),
             tooltip: '관리자 로그인',
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Manager login not yet implemented')),
-              );
+              // ScaffoldMessenger.of(context).showSnackBar(
+              //   const SnackBar(content: Text('Manager login not yet implemented')),
+              // );
+              appState.showManagerLogin(context);
             },
           ),
           IconButton(

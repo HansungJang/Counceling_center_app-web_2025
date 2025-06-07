@@ -10,6 +10,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+import 'package:flutter/services.dart'; // SystemChannels 사용을 위해 추가
+
+
+
 class ApplicationState extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -32,35 +36,36 @@ class ApplicationState extends ChangeNotifier {
 
 // #1. [login methods]
 
-  Future<void> signInWithGoogle() async {
-    final googleSignIn = GoogleSignIn();
-    final googleUser = await googleSignIn.signIn();
-    if (googleUser == null) {
-      print("Google 로그인 취소됨");
-      return; // 사용자가 로그인 취소
-    }
-    final googleAuth = await googleUser.authentication;
-    final credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
-    try {
-      await _auth.signInWithCredential(credential);
-      print("Google 로그인 성공");
-    } catch (e) {
-      print("Google 로그인 실패: $e");
-    }
-  }
-  Future<void> signInAnonymously() async {
-    try {
-      final userCredential = await _auth.signInAnonymously();
-      _user = userCredential.user;
-      print("익명 로그인 성공: ${_user?.uid}");
-      await _createOrUpdateUserProfile(_user!);
-    } catch (e) {
-      print("익명 로그인 실패: $e");
-    }
-  }
+  // Future<void> signInWithGoogle() async {
+  //   final googleSignIn = GoogleSignIn();
+  //   final googleUser = await googleSignIn.signIn();
+  //   if (googleUser == null) {
+  //     print("Google 로그인 취소됨");
+  //     return; // 사용자가 로그인 취소
+  //   }
+  //   final googleAuth = await googleUser.authentication;
+  //   final credential = GoogleAuthProvider.credential(
+  //     accessToken: googleAuth.accessToken,
+  //     idToken: googleAuth.idToken,
+  //   );
+  //   try {
+  //     await _auth.signInWithCredential(credential);
+  //     print("Google 로그인 성공");
+  //   } catch (e) {
+  //     print("Google 로그인 실패: $e");
+  //   }
+  // }
+  // Future<void> signInAnonymously() async {
+  //   try {
+  //     final userCredential = await _auth.signInAnonymously();
+  //     _user = userCredential.user;
+  //     print("익명 로그인 성공: ${_user?.uid}");
+  //     await _createOrUpdateUserProfile(_user!);
+  //   } catch (e) {
+  //     print("익명 로그인 실패: $e");
+  //   }
+  // }
+
   Future<void> signInWithEmailAndPassword(String email, String password) async {
     try {
       final userCredential = await _auth.signInWithEmailAndPassword(
@@ -109,6 +114,22 @@ class ApplicationState extends ChangeNotifier {
     }
     notifyListeners();
   }
+
+
+   /// Manager 로그인 method 
+   /// Home page에서 관리자 로그인 버튼 클릭 시 호출 
+     Future<void> showManagerLogin(BuildContext context) async {
+    // 다이얼로그를 띄우는 로직
+    showDialog(
+      context: context,
+      builder: (context) {
+        // 다이얼로그 내용은 별도의 StatefulWidget으로 관리하여 깔끔하게 유지
+        return _ManagerLoginDialog(appState: this);
+      },
+    );
+  }
+
+
 
   /// Firestore에 사용자 프로필 생성 또는 업데이트
 
@@ -178,6 +199,8 @@ class ApplicationState extends ChangeNotifier {
       print("사용자 삭제 실패: $e");
     }
   }
+
+
 
 
   // #2. [about_us methods]
@@ -483,5 +506,130 @@ class ApplicationState extends ChangeNotifier {
       // [추가] 오류 발생 시 로그 출력
       print('Error ensuring center info exists: $e');
     }
+  }
+}
+
+/// 관리자 로그인 다이얼로그 [method는 #1. manager 항목에서 확인 가능]
+// 관리자 로그인/회원가입 UI를 위한 별도의 StatefulWidget
+class _ManagerLoginDialog extends StatefulWidget {
+  final ApplicationState appState;
+  const _ManagerLoginDialog({required this.appState});
+
+  @override
+  State<_ManagerLoginDialog> createState() => _ManagerLoginDialogState();
+}
+
+
+class _ManagerLoginDialogState extends State<_ManagerLoginDialog> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  String? _authError;
+
+  // 로그인/가입 시도를 처리하는 통합 함수
+  Future<void> _submit(Future<void> Function(String, String) action) async {
+    if (!_formKey.currentState!.validate()) return;
+    
+    // 키보드 숨기기
+    SystemChannels.textInput.invokeMethod('TextInput.hide');
+    if (!_formKey.currentState!.validate()) return;
+    
+    // 에러 메시지 초기화
+    setState(() {
+      _authError = null;
+    });
+
+    try {
+      await action(_emailController.text.trim(), _passwordController.text);
+      if (mounted) Navigator.of(context).pop(); // 성공 시 다이얼로그 닫기
+    } on FirebaseAuthException catch (e) {
+      // Firebase에서 제공하는 에러 메시지를 사용
+      if (mounted) {
+        setState(() {
+           _authError = e.message ?? '오류가 발생했습니다.';
+        });
+      }
+    } catch (e) {
+      // 기타 에러
+      if (mounted) {
+        setState(() {
+          _authError = '알 수 없는 오류가 발생했습니다.';
+        });
+      }
+    }
+  }
+
+   @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('관리자 로그인/가입'),
+      // [수정] SingleChildScrollView로 감싸서 오버플로우 방지
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          // [추가] 사용자가 입력할 때마다 자동으로 유효성 검사를 실행합니다.
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: _emailController,
+                decoration: const InputDecoration(labelText: '이메일'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return '이메일을 입력하세요.';
+                  }
+                  // 간단한 이메일 형식 검사 (정규식 사용)
+                  final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                  if (!emailRegex.hasMatch(value)) {
+                    return '올바른 이메일 형식을 입력해주세요.';
+                  }
+                  return null;
+                },
+               ),
+              TextFormField(
+                controller: _passwordController,
+                obscureText: true,
+                decoration: const InputDecoration(labelText: '비밀번호'),
+                 // [수정] 비밀번호 길이 및 빈 값 검사
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return '비밀번호를 입력하세요.';
+                  }
+                  if (value.length < 6) {
+                    return '비밀번호는 6자리 이상이어야 합니다.';
+                  }
+                  return null;
+                },
+               ),
+              // [추가] 에러 메시지 표시 영역
+              if (_authError != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 16.0),
+                  child: Text(
+                    _authError!,
+                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('취소'),
+        ),
+        TextButton(
+          onPressed: () => _submit(widget.appState.registerWithEmailAndPassword),
+          child: const Text('새 관리자 가입'),
+        ),
+        ElevatedButton(
+          onPressed: () => _submit(widget.appState.signInWithEmailAndPassword),
+          child: const Text('로그인'),
+        ),
+      ],
+    );
   }
 }
