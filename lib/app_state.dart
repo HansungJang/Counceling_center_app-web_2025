@@ -434,6 +434,12 @@ class ApplicationState extends ChangeNotifier {
     required List<String> answers,
   }) async {
     // 로그인한 사용자만 제출 가능하도록 확인
+      // --- Flutter 앱 데이터 확인용 로그 ---
+      print("--- [Debug] app_state.dart: submitConsultation 호출됨 ---");
+      print("전달받은 질문 개수: ${questions.length}");
+      print("전달받은 답변 개수: ${answers.length}");
+      print("전달받은 답변 내용: $answers");
+      // --- 로그 끝 ---
     if (_user == null) {
       throw Exception('로그인이 필요합니다.');
     }

@@ -48,7 +48,7 @@ class _ConsultationPageState extends State<ConsultationPage> {
   // For multiple fields: "https://docs.google.com/forms/d/e/YOUR_FORM_ID/viewform?usp=pp_url&entry.ID1={answer1}&entry.ID2={answer2}"
 
   // Let's assume you have a base URL and will append parameters later
-  final String? googleFormBaseUrl = "https://docs.google.com/forms/d/e/YOUR_FORM_ID/viewform?usp=pp_url"; // Replace with your form's base URL
+  //final String? googleFormBaseUrl = "https://docs.google.com/forms/d/e/YOUR_FORM_ID/viewform?usp=pp_url"; // Replace with your form's base URL
   final Map<String, String> googleFormFieldIds = {
     'q1': 'entry.YOUR_FIELD_ID_FOR_Q1', // Replace with actual field ID for question 1
     'q2': 'entry.YOUR_FIELD_ID_FOR_Q2', // Replace with actual field ID for question 2
@@ -123,6 +123,12 @@ void _submitAnswers() async {
     // 질문과 답변 텍스트 리스트 준비
     final List<String> questions = _questions.map((q) => q['text']!).toList();
     final List<String> answers = _textControllers.map((c) => c.text).toList();
+
+    // --- Flutter 앱 데이터 확인용 로그 ---
+    print("--- [Debug] consultation_page.dart: 제출 직전 데이터 확인 ---");
+    print("TextEditingController 개수: ${_textControllers.length}");
+    print("캡처된 답변 내용: $answers");
+    // --- 로그 끝 ---
 
     await appState.submitConsultation(
       questions: questions,

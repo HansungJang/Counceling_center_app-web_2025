@@ -21,16 +21,27 @@ const db = admin.firestore();
 // --- Google Sheets 설정 ---
 const SPREADSHEET_ID =
 // eslint-disable-next-line max-len
-"1AA_VhRCd2tRz9utoVOls5I1SeGTDe_er-ev9ILixbEc"; // TODO: 1단계에서 복사한 Sheet ID를 여기에 붙여넣으세요.
-const SHEET_NAME = "data"; // TODO: 데이터를 기록할 시트의 이름 (기본값: 시트1)
+"1QWXYlDpYCKO88nJEH8uap1eeFyyboc85aUZ05MubrCc"; // TODO: 1단계에서 복사한 Sheet ID를 여기에 붙여넣으세요.
+const SHEET_NAME = "data_record"; // TODO: 데이터를 기록할 시트의 이름 (기본값: 시트1)
+const SERVICE_ACCOUNT_KEY_FILE = "./service-account-key.json"; // 추가한 키 파일 이름
 
 // part1: 새 상담 신청이 생성될 때 실행되는 함수 (v2 스타일)
 exports.notifyManagerOnNewConsultation = onDocumentCreated(
     "consultations/{consultationId}",
     async (event) => {
       // deploy확인
-      console.log("--- DEPLOYMENT CHECK: v4 - range: SHEET_NAME only ---");
+      // console.log("--- DEPLOYMENT CHECK: v4 - range: SHEET_NAME only ---");
       // v2에서는 snap, context 대신 event 객체를 사용합니다.
+
+      // =================================================================
+      // [데이터 확인용 로그] - 함수가 받은 데이터 전체를 출력합니다.
+      // =================================================================
+      console.log("--- START: Full Event Object ---");
+      // JSON.stringify를 사용하여 객체를 읽기 좋은 형태의 문자열로 변환하여 출력합니다.
+      console.log(JSON.stringify(event, null, 2));
+      console.log("--- END: Full Event Object ---");
+      // =================================================================
+
       const snap = event.data;
       if (!snap) {
         console.log("No data associated with the event");
@@ -38,6 +49,13 @@ exports.notifyManagerOnNewConsultation = onDocumentCreated(
       }
       const cData = snap.data();
 
+      // =================================================================
+      // [데이터 확인용 로그] - Firestore 문서의 실제 데이터 내용을 출력합니다.
+      // =================================================================
+      console.log("--- START: Consultation Data (from Firestore) ---");
+      console.log(JSON.stringify(cData.consultationData, null, 2));
+      console.log("--- END: Consultation Data (from Firestore) ---");
+      // =================================================================
       const userEmail = cData.userEmail || "이메일 없음";
       // toDate()가 필요 없을 수 있습니다. 타임스탬프 객체를 직접 사용합니다.
       const submittedAtDate = snap.createTime.toDate();
@@ -45,7 +63,12 @@ exports.notifyManagerOnNewConsultation = onDocumentCreated(
       const submittedAtKR =
       submittedAtDate.toLocaleString("ko-KR", {timeZone: "Asia/Seoul"});
       console.log(`새 상담 신청 접수: ${userEmail}`);
-
+      const anser1 = cData.consultationData.answer_1 || "답변 없음";
+      // console.log(`답변 1: ${anser1}`);
+      const anser2 = cData.consultationData.answer_2 || "답변 없음";
+      // console.log(`답변 2: ${anser2}`);
+      const anser3 = cData.consultationData.answer_3 || "답변 없음";
+      // console.log(`답변 3: ${anser3}`);
       // 관리자에게 보낼 이메일 내용 구성
       const emailContent = {
         to: ["hansung.j1106@gmail.com"], // TODO: 관리자 이메일 주소 입력
@@ -57,7 +80,9 @@ exports.notifyManagerOnNewConsultation = onDocumentCreated(
         <ul>
           <li><strong>신청자 이메일:</strong> ${userEmail}</li>
           <li><strong>신청 시간:</strong> ${submittedAtKR}</li>
-          <li><strong>문서 ID:</strong> ${event.params.consultationId}</li>
+          <li><strong>1질문 답변(고민, 신청사유):</strong> ${anser1}</li>
+          <li><strong>2질문 답변(현상, 현재상황):</strong> ${anser2}</li>
+          <li><strong>3질문 답변(목적, 희망사항):</strong> ${anser3}</li>
         </ul>
         <p>감사합니다.</p>
       `,
@@ -74,20 +99,26 @@ exports.notifyManagerOnNewConsultation = onDocumentCreated(
 
       // part2: Google Sheets에 데이터 기록
       try {
-        const auth = new google.auth.GoogleAuth({
+        const auth = new google.auth.JWT({ // JWT 인증 방식 사용
+          keyFile: SERVICE_ACCOUNT_KEY_FILE, // googke sheet 연동 인증 error 해결
           scopes: ["https://www.googleapis.com/auth/spreadsheets"],
         });
         const sheets = google.sheets({version: "v4", auth});
-
-        const answers = cData.consultationData || {};
-
+        // =================================================================
+        // [최종 디버깅] - 함수가 실제로 사용하는 서비스 계정 이메일을 출력합니다.
+        // =================================================================
+        // const authClient = await auth.getClient();
+        // console.log("Function is running as service account:",
+        //     authClient.email);
+        // =================================================================
+        // const answers = cData.consultationData || {};
         // 시트에 기록할 행 데이터 구성
         const newRow = [
           submittedAtKR,
           userEmail,
-          answers.question_1 || "", answers.answer_1 || "",
-          answers.question_2 || "", answers.answer_2 || "",
-          answers.question_3 || "", answers.answer_3 || "",
+          anser1 || "",
+          anser2 || "",
+          anser3 || "",
           // 질문이 더 있다면 여기에 추가...
         ];
 
