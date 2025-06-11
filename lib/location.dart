@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:geocoding/geocoding.dart'; // Import for geocoding if needed (경도, 위도 표기)
+import 'package:geocoding/geocoding.dart'; // Import for geocoding  (경도, 위도 표기)
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'app_state.dart';
@@ -211,7 +211,20 @@ class _LocationPageState extends State<LocationPage> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: () => _launchUrl(data['googleMapsUrl'] ?? ''),
+                    onPressed: () {
+                          final address = data['address'] as String?;
+                          if (address != null && address.isNotEmpty) {
+                            // 주소 문자열을 URL에 사용 가능하도록 인코딩합니다.
+                            final query = Uri.encodeComponent(address);
+                            // Google Maps 검색을 위한 표준 URL 형식입니다.
+                            final url = 'https://www.google.com/maps/search/?api=1&query=$query';
+                            _launchUrl(url);
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('주소 정보가 없어 지도를 열 수 없습니다.')),
+                            );
+                          }
+                        },
                     icon: const Icon(Icons.map_outlined),
                     label: const Text('Google Maps에서 보기'),
                   ),
