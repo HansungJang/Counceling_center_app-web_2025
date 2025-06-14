@@ -50,7 +50,7 @@
 이러한 서버리스 아키텍처 덕분에 별도의 서버 관리 없이도 안정적이고 확장 가능한 자동화 기능을 구현할 수 있었습니다.
 
 ## 📱 스크린샷
-[![프로젝트 시연 영상](https://img.youtube.com/vi/dQw4w9WgXcQ/0.jpg)](https://www.youtube.com/watch?v=dQw4w9WgXcQ)
+[![프로젝트 시연 영상](https://img.youtube.com/vi/lKNavrIi3U4/0.jpg)](https://youtu.be/lKNavrIi3U4)
 
 
 ## 🗺️ 향후 개발 계획 (Roadmap)
