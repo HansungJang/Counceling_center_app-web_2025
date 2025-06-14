@@ -34,37 +34,7 @@ class ApplicationState extends ChangeNotifier {
     ensureCenterInfoExists();
   }
 
-// #1. [login methods]
-
-  // Future<void> signInWithGoogle() async {
-  //   final googleSignIn = GoogleSignIn();
-  //   final googleUser = await googleSignIn.signIn();
-  //   if (googleUser == null) {
-  //     print("Google 로그인 취소됨");
-  //     return; // 사용자가 로그인 취소
-  //   }
-  //   final googleAuth = await googleUser.authentication;
-  //   final credential = GoogleAuthProvider.credential(
-  //     accessToken: googleAuth.accessToken,
-  //     idToken: googleAuth.idToken,
-  //   );
-  //   try {
-  //     await _auth.signInWithCredential(credential);
-  //     print("Google 로그인 성공");
-  //   } catch (e) {
-  //     print("Google 로그인 실패: $e");
-  //   }
-  // }
-  // Future<void> signInAnonymously() async {
-  //   try {
-  //     final userCredential = await _auth.signInAnonymously();
-  //     _user = userCredential.user;
-  //     print("익명 로그인 성공: ${_user?.uid}");
-  //     await _createOrUpdateUserProfile(_user!);
-  //   } catch (e) {
-  //     print("익명 로그인 실패: $e");
-  //   }
-  // }
+// #1. [login & user_profile methods]
 
   Future<void> signInWithEmailAndPassword(String email, String password) async {
     try {
@@ -199,8 +169,6 @@ class ApplicationState extends ChangeNotifier {
       print("사용자 삭제 실패: $e");
     }
   }
-
-
 
 
   // #2. [about_us methods]
@@ -376,10 +344,6 @@ class ApplicationState extends ChangeNotifier {
     }
   }
 
-  // 관리자를 위한 Therapy Area 추가/수정/삭제 메소드 (about_us.dart 와 유사하게 구현 가능)
-  // 예시: addTherapyArea, updateTherapyArea, deleteTherapyArea
-  // 이 부분은 현재 요청의 핵심이 아니므로, 필요시 about_us.dart를 참고하여 추가해주세요.
-
   // 임시 상담 분야 데이터
   final List<Map<String, dynamic>> _sampleTherapyAreasData = [
     {
@@ -434,12 +398,6 @@ class ApplicationState extends ChangeNotifier {
     required List<String> answers,
   }) async {
     // 로그인한 사용자만 제출 가능하도록 확인
-      // --- Flutter 앱 데이터 확인용 로그 ---
-      print("--- [Debug] app_state.dart: submitConsultation 호출됨 ---");
-      print("전달받은 질문 개수: ${questions.length}");
-      print("전달받은 답변 개수: ${answers.length}");
-      print("전달받은 답변 내용: $answers");
-      // --- 로그 끝 ---
     if (_user == null) {
       throw Exception('로그인이 필요합니다.');
     }
@@ -509,7 +467,6 @@ class ApplicationState extends ChangeNotifier {
         });
       }
     } catch (e) {
-      // [추가] 오류 발생 시 로그 출력
       print('Error ensuring center info exists: $e');
     }
   }
@@ -570,11 +527,9 @@ class _ManagerLoginDialogState extends State<_ManagerLoginDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('관리자 로그인/가입'),
-      // [수정] SingleChildScrollView로 감싸서 오버플로우 방지
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
-          // [추가] 사용자가 입력할 때마다 자동으로 유효성 검사를 실행합니다.
           autovalidateMode: AutovalidateMode.onUserInteraction,
           child: Column(
             mainAxisSize: MainAxisSize.min,

@@ -40,22 +40,13 @@ class _ConsultationPageState extends State<ConsultationPage> {
   late List<TextEditingController> _textControllers;
   int _currentPage = 0;
 
-  // Google Form URL and fallback contact (can be null)
-  // IMPORTANT: Replace 'YOUR_GOOGLE_FORM_URL' with your actual Google Form URL
-  // And replace 'YOUR_FIELD_ID_FOR_Q1', 'YOUR_FIELD_ID_FOR_Q2', etc.
-  // with the actual prefilled entry IDs from your Google Form.
-  // Example: "https://docs.google.com/forms/d/e/YOUR_FORM_ID/viewform?usp=pp_url&entry.123456789=" (for one field)
-  // For multiple fields: "https://docs.google.com/forms/d/e/YOUR_FORM_ID/viewform?usp=pp_url&entry.ID1={answer1}&entry.ID2={answer2}"
-
-  // Let's assume you have a base URL and will append parameters later
-  //final String? googleFormBaseUrl = "https://docs.google.com/forms/d/e/YOUR_FORM_ID/viewform?usp=pp_url"; // Replace with your form's base URL
   final Map<String, String> googleFormFieldIds = {
-    'q1': 'entry.YOUR_FIELD_ID_FOR_Q1', // Replace with actual field ID for question 1
-    'q2': 'entry.YOUR_FIELD_ID_FOR_Q2', // Replace with actual field ID for question 2
-    'q3': 'entry.YOUR_FIELD_ID_FOR_Q3', // Replace with actual field ID for question 3
+    'q1': 'entry.YOUR_FIELD_ID_FOR_Q1', 
+    'q2': 'entry.YOUR_FIELD_ID_FOR_Q2', 
+    'q3': 'entry.YOUR_FIELD_ID_FOR_Q3', 
   };
 
-  final String fallbackContact = '+82 10-1234-5678'; // Your fallback contact
+  final String fallbackContact = '+82 10-1234-5678'; 
 
   @override
   void initState() {
@@ -89,18 +80,13 @@ class _ConsultationPageState extends State<ConsultationPage> {
     try {
       await custom_tabs.launchUrl(
         Uri.parse(url),
-        // preferencesDeepLink is not a direct parameter for launchUrl,
-        // it's usually handled by the platform specific options if available
-        // or by how the URL scheme is registered.
-        // For web URLs, it typically opens in the default browser or Custom Tab.
+
         customTabsOptions: custom_tabs.CustomTabsOptions( // For Android Custom Tabs
           colorSchemes: custom_tabs.CustomTabsColorSchemes.defaults(
             toolbarColor: theme.primaryColor, // Use your app's theme color
           ),
           // Other CustomTabsOptions...
         ),
-        // For iOS, SFSafariViewControllerOptions can be used if needed,
-        // but url_launcher handles it well by default.
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -110,7 +96,7 @@ class _ConsultationPageState extends State<ConsultationPage> {
   }
 
 void _submitAnswers() async {
-  // 로딩 인디케이터를 보여주기 위한 처리 (선택 사항)
+  // 로딩 인디케이터를 보여주기 위한 처리 
   showDialog(
     context: context,
     barrierDismissible: false,
@@ -123,12 +109,6 @@ void _submitAnswers() async {
     // 질문과 답변 텍스트 리스트 준비
     final List<String> questions = _questions.map((q) => q['text']!).toList();
     final List<String> answers = _textControllers.map((c) => c.text).toList();
-
-    // --- Flutter 앱 데이터 확인용 로그 ---
-    print("--- [Debug] consultation_page.dart: 제출 직전 데이터 확인 ---");
-    print("TextEditingController 개수: ${_textControllers.length}");
-    print("캡처된 답변 내용: $answers");
-    // --- 로그 끝 ---
 
     await appState.submitConsultation(
       questions: questions,

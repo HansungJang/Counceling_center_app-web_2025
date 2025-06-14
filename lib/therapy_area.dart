@@ -6,27 +6,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'app_state.dart'; // ApplicationState import
 import 'therapy_area_detail.dart'; // Import the new detail page
 
-// 아이콘 이름을 IconData로 매핑하는 함수 (개선 필요)  
-// IconData getIconDataFromString(String iconName) {
-//   // 간단한 예시입니다. 실제로는 더 많은 아이콘을 매핑하거나 다른 방식을 사용해야 합니다.
-//   switch (iconName.toLowerCase()) {
-//     case 'child_care':
-//       return Icons.child_care;
-//     case 'school':
-//       return Icons.school;
-//     case 'favorite':
-//       return Icons.favorite;
-//     case 'people':
-//       return Icons.people;
-//     case 'healing':
-//       return Icons.healing;
-//     case 'spa': // 번아웃/트라우마에 대한 아이콘 예시
-//       return Icons.spa; // 또는 Icons.psychology, Icons.self_improvement 등
-//     default:
-//       return Icons.help_outline; // 기본 아이콘
-//   }
-// }
-
 final Map<String, IconData> _iconMap = {
   'child_care': Icons.child_care,
   'school': Icons.school,
@@ -91,14 +70,6 @@ class _TherapyPageState extends State<TherapyPage> {
                             value == null || value.isEmpty ? '설명을 입력해주세요.' : null,
                         onSaved: (value) => description = value!,
                       ),
-                      // TextFormField(
-                      //   initialValue: iconName,
-                      //   decoration: const InputDecoration(
-                      //       labelText: '아이콘 이름', hintText: '예: child_care, school, healing'),
-                      //   validator: (value) =>
-                      //       value == null || value.isEmpty ? '아이콘 이름을 입력해주세요.' : null,
-                      //   onSaved: (value) => iconName = value!,
-                      // ),
                           DropdownButtonFormField<String>(
                             value: iconName,
                             decoration: const InputDecoration(labelText: '아이콘 선택'),
@@ -116,7 +87,6 @@ class _TherapyPageState extends State<TherapyPage> {
                             }).toList(),
                             onChanged: (String? newValue) {
                               if (newValue != null) {
-                                // Use the dialog's own state update function
                                 setDialogState(() {
                                   iconName = newValue;
                                 });
@@ -288,7 +258,6 @@ class _TherapyPageState extends State<TherapyPage> {
           ),
         ],
       ),
-      // TODO: 관리자용 카드 추가/수정/삭제 버튼 (floatingActionButton 등 활용, app_state.user가 관리자일 때만 보이도록)
     );
   }
 
@@ -300,14 +269,9 @@ class _TherapyPageState extends State<TherapyPage> {
     required String title,
     required String description,
     required IconData iconData,
-    String? cardImagePath, // 카드별 배경 이미지 (선택적)
-    // required bool isSelected,
-    // required VoidCallback onTap,
+
   }) {
     final theme = Theme.of(context);
-    final cardColor = Colors.green.shade50.withOpacity(0.85); // 숲 테마 카드 색상
-    final splashColor = theme.primaryColor.withOpacity(0.2);
-
 
   return Card(
    margin: const EdgeInsets.symmetric(vertical: 8.0),

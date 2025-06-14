@@ -1,8 +1,5 @@
 // therapist_page.dart 수정
 
-// [TODO / need] manager profile image 사입 (report: 25.06.07.)
-
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -27,12 +24,9 @@ class _TherapistPageState extends State<TherapistPage> {
     Map<String, dynamic> currentData = therapistDataDoc?.data() ?? {};
     String _name = currentData['name'] ?? '';
     String _titleCredentials = currentData['titleCredentials'] ?? '';
-    // 이전 코드에서는 affiliation과 specialties가 합쳐져 있었으나, 데이터 모델에 따라 분리 또는 통합 관리 필요
-    // 여기서는 affiliation과 specialties를 분리된 필드로 가정하고 처리
     String _affiliation = currentData['affiliation'] ?? '';
-    String _specialties = currentData['specialties'] ?? ''; // 'specialties' 필드 사용
+    String _specialties = currentData['specialties'] ?? ''; 
     String _message = currentData['message'] ?? '';
-    // String? _imageUrl = currentData['imageUrl']; // 이미지 URL (현재는 사용 안 함)
 
     showDialog(
       context: context,
@@ -83,14 +77,6 @@ class _TherapistPageState extends State<TherapistPage> {
                         value == null || value.isEmpty ? '메시지를 입력해주세요.' : null,
                     onSaved: (value) => _message = value!,
                   ),
-                  // 이미지 URL 입력 필드 (선택 사항)
-                  /*
-                  TextFormField(
-                    initialValue: _imageUrl,
-                    decoration: const InputDecoration(labelText: '프로필 이미지 URL (선택)'),
-                    onSaved: (value) => _imageUrl = value,
-                  ),
-                  */
                 ],
               ),
             ),
@@ -114,7 +100,6 @@ class _TherapistPageState extends State<TherapistPage> {
                       affiliation: _affiliation,
                       specialties: _specialties, // specialties 전달
                       message: _message,
-                      // imageUrl: _imageUrl?.isNotEmpty == true ? _imageUrl : null,
                     );
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text(therapistDataDoc != null && therapistDataDoc.exists ? '상담사 정보가 업데이트되었습니다.' : '상담사 정보가 저장되었습니다.')),
@@ -158,7 +143,6 @@ class _TherapistPageState extends State<TherapistPage> {
               return IconButton(
                 icon: const Icon(Icons.edit_note),
                 onPressed: () {
-                  // StreamBuilder에서 받은 snapshot.data (DocumentSnapshot)를 폼에 전달
                   _showTherapistForm(context, appState, snapshot.data);
                 },
                   tooltip: snapshot.hasData && snapshot.data!.exists ? '정보 수정' : '정보 입력',
@@ -202,9 +186,6 @@ class _TherapistPageState extends State<TherapistPage> {
                   CircleAvatar(
                     radius: 50,
                     backgroundColor: Colors.grey[300],
-                    // backgroundImage: therapistInfo['imageUrl'] != null
-                    //     ? NetworkImage(therapistInfo['imageUrl'])
-                    //     : null, // 기본 이미지 또는 아이콘
                     child: therapistInfo['imageUrl'] == null
                         ? const Icon(Icons.person, size: 50, color: Colors.white70)
                         : null,
